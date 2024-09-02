@@ -3742,18 +3742,30 @@ class Trainer:
         Gather value of `tensors` (tensor or list/tuple of nested tensors) and convert them to numpy before
         concatenating them to `gathered`
         """
+        if self.args.local_rank == 0 or self.args.local_rank == -1:
+            print("TRANSFORMERS: Trainer._nested_gather: Start")
         if tensors is None:
             return
+        if self.args.local_rank == 0 or self.args.local_rank == -1:
+            print("TRANSFORMERS: Trainer._nested_gather: P1")
         if is_torch_xla_available():
             if name is None:
                 name = "nested_gather"
+            if self.args.local_rank == 0 or self.args.local_rank == -1:
+                print("TRANSFORMERS: Trainer._nested_gather: P2")
             tensors = nested_xla_mesh_reduce(tensors, name)
         elif is_sagemaker_mp_enabled():
+            if self.args.local_rank == 0 or self.args.local_rank == -1:
+                print("TRANSFORMERS: Trainer._nested_gather: P3")
             tensors = smp_gather(tensors)
         elif (self.args.distributed_state is not None and self.args.distributed_state.distributed_type != "NO") or (
             self.args.distributed_state is None and self.args.local_rank != -1
         ):
+            if self.args.local_rank == 0 or self.args.local_rank == -1:
+                print("TRANSFORMERS: Trainer._nested_gather: P4")
             tensors = distributed_concat(tensors)
+        if self.args.local_rank == 0 or self.args.local_rank == -1:
+            print("TRANSFORMERS: Trainer._nested_gather: End")
         return tensors
 
     def prediction_step(
